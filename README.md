@@ -1,29 +1,33 @@
-# Vincenty大地测量计算器
 
-一个基于Vincenty算法的专业大地测量计算工具。
 
-## 功能特性
+<!--
+  <<< Author notes: Step 2 >>>
+  Start this step by acknowledging the previous step.
+  Define terms and link to docs.github.com.
+  Historic note: previous version checked for empty pull request, changed to the correct theme `minima`.
+-->
 
-- 📍 坐标求距离：计算两点间的距离和方位角
-- 🧭 距离求坐标：根据起点、方位角和距离计算终点坐标  
-- 🔄 坐标转换：支持十进制度和度分秒格式转换
-- 📱 响应式设计：完美适配手机和电脑
+## Step 2: Configure your site
 
-## 使用方法
+_You turned on GitHub Pages! :tada:_
 
-1. 打开 `index.html` 文件
-2. 选择需要的功能选项卡
-3. 输入坐标数据
-4. 点击计算按钮查看结果
+We'll work in a branch, `my-pages`, that I created for you to get this site looking great. :sparkle:
 
-## 技术说明
+Jekyll uses a file titled `_config.yml` to store settings for your site, your theme, and reusable content like your site title and GitHub handle. You can check out the `_config.yml` file on the **Code** tab of your repository.
 
-- 纯前端JavaScript实现
-- 基于WGS-84椭球体模型
-- 使用Bootstrap 5 UI框架
-- 支持离线使用
+We need to use a blog-ready theme. For this activity, we will use a theme named "minima".
 
-## 访问地址
+### :keyboard: Activity: Configure your site
 
-将本项目部署到GitHub Pages后访问：
-`https://你的用户名.github.io/vincenty-calculator`
+1. Browse to the `_config.yml` file in the `my-pages` branch.
+1. In the upper right corner, open the file editor.
+1. Add a `theme:` set to **minima** so it shows in the `_config.yml` file as below:
+   ```yml
+   theme: minima
+   ```
+1. (optional) You can modify the other configuration variables such as `title:`, `author:`, and `description:` to further customize your site.
+1. Commit your changes.
+1. (optional) Create a pull request to view all the changes you'll make throughout this course. Click the **Pull Requests** tab, click **New pull request**, set `base: main` and `compare:my-pages`.
+1. Wait about 20 seconds then refresh this page (the one you're following instructions from). [GitHub Actions](https://docs.github.com/en/actions) will automatically update to the next step.
+
+
