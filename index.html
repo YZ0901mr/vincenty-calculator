@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vincenty大地测量计算器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        .calculator-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        
+        .result-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 25px;
+            border-left: 5px solid var(--primary-color);
+            position: relative;
+        }
+        
+        .coordinate-example {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+        
+        .result-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            color: var(--primary-color);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-calculator me-2"></i>
+                Vincenty计算器
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="calculator-card">
+                    <div class="card-body p-4">
+                        <ul class="nav nav-tabs nav-justified mb-4" id="calcTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="inverse-tab" data-bs-toggle="tab" data-bs-target="#inverse" type="button" role="tab">
+                                    <i class="fas fa-ruler-combined me-2"></i>坐标求距离
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="direct-tab" data-bs-toggle="tab" data-bs-target="#direct" type="button" role="tab">
+                                    <i class="fas fa-location-arrow me-2"></i>距离求坐标
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="convert-tab" data-bs-toggle="tab" data-bs-target="#convert" type="button" role="tab">
+                                    <i class="fas fa-exchange-alt me-2"></i>坐标转换
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="calcTabsContent">
+                            <!-- 反算选项卡 -->
+                            <div class="tab-pane fade show active" id="inverse" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>第一点坐标</h5>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">纬度</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-latitude"></i></span>
+                                                <input type="text" class="form-control" id="lat1" placeholder="例如: 39.9042">
+                                            </div>
+                                            <div class="coordinate-example">支持十进制度或度分秒格式</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">经度</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-longitude"></i></span>
+                                                <input type="text" class="form-control" id="lon1" placeholder="例如: 116.4074">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>第二点坐标</h5>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">纬度</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-latitude"></i></span>
+                                                <input type="text" class="form-control" id="lat2" placeholder="例如: 31.2304">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">经度</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-longitude"></i></span>
+                                                <input type="text" class="form-control" id="lon2" placeholder="例如: 121.4737">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button class="btn btn-primary me-3" onclick="calculateInverse()">
+                                        <i class="fas fa-calculator me-2"></i>计算距离和方位角
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearInverse()">
+                                        <i class="fas fa-eraser me-2"></i>清空
+                                    </button>
+                                </div>
+                                <div class="loading" id="inverseLoading">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">计算中...</span>
+                                    </div>
+                                    <p class="mt-2 fw-bold">计算中，请稍候...</p>
+                                </div>
+                                <div class="result-box" id="inverseResult" style="display: none;">
+                                    <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>计算结果</h5>
+                                    <div id="inverseResultContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- 正算选项卡 -->
+                            <div class="tab-pane fade" id="direct" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="mb-3"><i class="fas fa-play-circle me-2"></i>起点坐标</h5>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">纬度</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-latitude"></i></span>
+                                                <input type="text" class="form-control" id="startLat" placeholder="例如: 39.9042">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">经度</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-longitude"></i></span>
+                                                <input type="text" class="form-control" id="startLon" placeholder="例如: 116.4074">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 class="mb-3"><i class="fas fa-cogs me-2"></i>计算参数</h5>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">方位角 (度)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-compass"></i></span>
+                                                <input type="number" class="form-control" id="azimuth" placeholder="0-360度" min="0" max="360" step="0.001">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">距离 (米)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-ruler"></i></span>
+                                                <input type="number" class="form-control" id="distance" placeholder="大于0" min="0.001" step="0.001">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button class="btn btn-primary me-3" onclick="calculateDirect()">
+                                        <i class="fas fa-calculator me-2"></i>计算终点坐标
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearDirect()">
+                                        <i class="fas fa-eraser me-2"></i>清空
+                                    </button>
+                                </div>
+                                <div class="loading" id="directLoading">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">计算中...</span>
+                                    </div>
+                                    <p class="mt-2 fw-bold">计算中，请稍候...</p>
+                                </div>
+                                <div class="result-box" id="directResult" style="display: none;">
+                                    <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>计算结果</h5>
+                                    <div id="directResultContent"></div>
+                                </div>
+                            </div>
+
+                            <!-- 坐标转换选项卡 -->
+                            <div class="tab-pane fade" id="convert" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5 class="mb-3"><i class="fas fa-sync-alt me-2"></i>坐标格式转换</h5>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">输入坐标</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                                <input type="text" class="form-control" id="convertInput" placeholder="例如: 39.9042 或 39°54'15.12&quot;N">
+                                            </div>
+                                            <div class="coordinate-example">
+                                                支持十进制度或度分秒格式
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button class="btn btn-primary me-3" onclick="convertCoordinate()">
+                                        <i class="fas fa-exchange-alt me-2"></i>转换格式
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearConvert()">
+                                        <i class="fas fa-eraser me-2"></i>清空
+                                    </button>
+                                </div>
+                                <div class="loading" id="convertLoading">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">转换中...</span>
+                                    </div>
+                                    <p class="mt-2 fw-bold">转换中，请稍候...</p>
+                                </div>
+                                <div class="result-box" id="convertResult" style="display: none;">
+                                    <button class="copy-btn" onclick="copyAllResults()">
+                                        <i class="fas fa-copy me-1"></i>复制全部
+                                    </button>
+                                    <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>转换结果</h5>
+                                    <div id="convertResultContent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复制成功提示 -->
+    <div class="toast align-items-center text-white bg-success border-0" id="copyToast" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2"></i>复制成功！
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Vincenty算法实现
+        class VincentyCalculator {
+            static a = 6378137.0;
+            static f = 1 / 298.257223563;
+            static b = (1 - this.f) * this.a;
+            
+            static inverse(lat1, lon1, lat2, lon2, maxIterations = 200, tolerance = 1e-12) {
+                const toRad = deg => deg * Math.PI / 180;
+                const toDeg = rad => rad * 180 / Math.PI;
+                
+                let lat1Rad = toRad(lat1);
+                let lon1Rad = toRad(lon1);
+                let lat2Rad = toRad(lat2);
+                let lon2Rad = toRad(lon2);
+                
+                let L = lon2Rad - lon1Rad;
+                let U1 = Math.atan((1 - this.f) * Math.tan(lat1Rad));
+                let U2 = Math.atan((1 - this.f) * Math.tan(lat2Rad));
+                let sinU1 = Math.sin(U1);
+                let cosU1 = Math.cos(U1);
+                let sinU2 = Math.sin(U2);
+                let cosU2 = Math.cos(U2);
+                
+                let lambda = L;
+                let lambdaPrev = 2 * Math.PI;
+                let iterationCount = 0;
+                
+                let sinLambda, cosLambda, sinSigma, cosSigma, sigma, sinAlpha, cosSqAlpha, cos2SigmaM;
+                
+                while (iterationCount < maxIterations && Math.abs(lambda - lambdaPrev) > tolerance) {
+                    sinLambda = Math.sin(lambda);
+                    cosLambda = Math.cos(lambda);
+                    sinSigma = Math.sqrt((cosU2 * sinLambda) ** 2 + (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) ** 2);
+                    
+                    if (sinSigma === 0) return { distance: 0, forwardAzimuth: 0, reverseAzimuth: 0 };
+                    
+                    cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
+                    sigma = Math.atan2(sinSigma, cosSigma);
+                    sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
+                    cosSqAlpha = 1 - sinAlpha * sinAlpha;
+                    
+                    cos2SigmaM = cosSqAlpha === 0 ? 0 : cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha;
+                    
+                    let C = this.f / 16 * cosSqAlpha * (4 + this.f * (4 - 3 * cosSqAlpha));
+                    lambdaPrev = lambda;
+                    lambda = L + (1 - C) * this.f * sinAlpha * (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+                    iterationCount++;
+                }
+                
+                if (iterationCount === maxIterations) throw new Error("算法未收敛");
+                
+                let uSq = cosSqAlpha * (this.a ** 2 - this.b ** 2) / (this.b ** 2);
+                let A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+                let B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+                
+                let deltaSigma = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) - B / 6 * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+                
+                let s = this.b * A * (sigma - deltaSigma);
+                
+                let alpha1 = Math.atan2(cosU2 * sinLambda, cosU1 * sinU2 - sinU1 * cosU2 * cosLambda);
+                let alpha2 = Math.atan2(cosU1 * sinLambda, -sinU1 * cosU2 + cosU1 * sinU2 * cosLambda);
+                
+                return {
+                    distance: s,
+                    forwardAzimuth: toDeg(alpha1) % 360,
+                    reverseAzimuth: toDeg(alpha2) % 360
+                };
+            }
+        }
+
+        // 坐标转换工具
+        class CoordinateConverter {
+            static dmsToDd(dmsStr) {
+                let str = dmsStr.trim().replace(/[°′″'"]/g, ' ').replace(/:/g, ' ').replace(/\s+/g, ' ').toUpperCase();
+                const directions = { 'N': 1, 'S': -1, 'E': 1, 'W': -1 };
+                let direction = 1;
+                
+                for (let dirChar in directions) {
+                    if (str.includes(dirChar)) {
+                        direction = directions[dirChar];
+                        str = str.replace(dirChar, '').trim();
+                        break;
+                    }
+                }
+                
+                if (str.startsWith('-')) {
+                    direction = -1;
+                    str = str.substring(1).trim();
+                }
+                
+                let parts = str.split(' ');
+                if (parts.length === 0) throw new Error("无效的度分秒格式");
+                
+                let degrees, minutes = 0, seconds = 0;
+                degrees = parseFloat(parts[0]);
+                if (parts.length >= 2) minutes = parseFloat(parts[1]);
+                if (parts.length >= 3) seconds = parseFloat(parts[2]);
+                
+                let dd = degrees + minutes / 60.0 + seconds / 3600.0;
+                return dd * direction;
+            }
+            
+            static ddToDms(dd, coordType = 'lat') {
+                const direction = coordType === 'lat' 
+                    ? (dd >= 0 ? 'N' : 'S')
+                    : (dd >= 0 ? 'E' : 'W');
+                
+                const ddAbs = Math.abs(dd);
+                const degrees = Math.floor(ddAbs);
+                const minutesFull = (ddAbs - degrees) * 60;
+                const minutes = Math.floor(minutesFull);
+                const seconds = (minutesFull - minutes) * 60;
+                
+                const secondsStr = seconds < 10 ? `0${seconds.toFixed(4)}` : seconds.toFixed(4);
+                return `${degrees}°${minutes}'${secondsStr}"${direction}`;
+            }
+            
+            static parseCoordinate(inputStr, coordType = 'auto') {
+                inputStr = inputStr.trim();
+                if (!inputStr) throw new Error("坐标不能为空");
+                
+                // 尝试解析为十进制度
+                let dd = parseFloat(inputStr);
+                if (!isNaN(dd)) {
+                    if (coordType === 'lat' && (dd < -90 || dd > 90)) throw new Error("纬度必须在-90到90度之间");
+                    if (coordType === 'lon' && (dd < -180 || dd > 180)) throw new Error("经度必须在-180到180度之间");
+                    return dd;
+                }
+                
+                // 尝试解析为度分秒
+                dd = this.dmsToDd(inputStr);
+                if (coordType === 'lat' && (dd < -90 || dd > 90)) throw new Error("纬度必须在-90到90度之间");
+                if (coordType === 'lon' && (dd < -180 || dd > 180)) throw new Error("经度必须在-180到180度之间");
+                return dd;
+            }
+        }
+
+        // 复制功能
+        function copyToClipboard(text) {
+            // 创建一个临时的textarea元素
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            
+            // 选择文本并复制
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // 对于移动设备
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopyToast();
+                }
+            } catch (err) {
+                console.error('复制失败:', err);
+            }
+            
+            // 移除临时元素
+            document.body.removeChild(textarea);
+        }
+        
+        function showCopyToast() {
+            const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+            toast.show();
+        }
+        
+        function copyAllResults() {
+            const decimalDegrees = document.querySelector('.decimal-degrees')?.textContent;
+            const dmsFormat = document.querySelector('.dms-format')?.textContent;
+            
+            if (decimalDegrees && dmsFormat) {
+                const textToCopy = `十进制度: ${decimalDegrees}\n度分秒: ${dmsFormat}`;
+                copyToClipboard(textToCopy);
+            }
+        }
+        
+        function copyDecimalDegrees() {
+            const decimalDegrees = document.querySelector('.decimal-degrees')?.textContent;
+            if (decimalDegrees) {
+                copyToClipboard(decimalDegrees);
+            }
+        }
+        
+        function copyDmsFormat() {
+            const dmsFormat = document.querySelector('.dms-format')?.textContent;
+            if (dmsFormat) {
+                copyToClipboard(dmsFormat);
+            }
+        }
+
+        // 工具函数
+        function showLoading(elementId) { document.getElementById(elementId).style.display = 'block'; }
+        function hideLoading(elementId) { document.getElementById(elementId).style.display = 'none'; }
+        function showResult(elementId) { document.getElementById(elementId).style.display = 'block'; }
+        function hideResult(elementId) { document.getElementById(elementId).style.display = 'none'; }
+
+        // 反算计算
+        function calculateInverse() {
+            try {
+                const lat1 = document.getElementById('lat1').value;
+                const lon1 = document.getElementById('lon1').value;
+                const lat2 = document.getElementById('lat2').value;
+                const lon2 = document.getElementById('lon2').value;
+
+                if (!lat1 || !lon1 || !lat2 || !lon2) {
+                    alert('请填写所有坐标字段');
+                    return;
+                }
+
+                showLoading('inverseLoading');
+                hideResult('inverseResult');
+
+                setTimeout(() => {
+                    try {
+                        const lat1dd = CoordinateConverter.parseCoordinate(lat1, 'lat');
+                        const lon1dd = CoordinateConverter.parseCoordinate(lon1, 'lon');
+                        const lat2dd = CoordinateConverter.parseCoordinate(lat2, 'lat');
+                        const lon2dd = CoordinateConverter.parseCoordinate(lon2, 'lon');
+
+                        const result = VincentyCalculator.inverse(lat1dd, lon1dd, lat2dd, lon2dd);
+                        
+                        const now = new Date();
+                        const content = `
+                            <div class="mb-3">
+                                <strong>起点坐标:</strong> (${lat1dd.toFixed(6)}°, ${lon1dd.toFixed(6)}°)
+                            </div>
+                            <div class="mb-3">
+                                <strong>终点坐标:</strong> (${lat2dd.toFixed(6)}°, ${lon2dd.toFixed(6)}°)
+                            </div>
+                            <div class="mb-3">
+                                <strong>计算结果:</strong><br>
+                                <span class="text-success fw-bold">距离: ${result.distance.toFixed(3)} 米 (${(result.distance/1000).toFixed(6)} 公里)</span><br>
+                                <span class="text-primary">正方位角: ${result.forwardAzimuth.toFixed(6)}°</span><br>
+                                <span class="text-info">反方位角: ${result.reverseAzimuth.toFixed(6)}°</span>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-clock me-1"></i>计算时间: ${now.toLocaleString('zh-CN')}
+                            </div>
+                        `;
+                        document.getElementById('inverseResultContent').innerHTML = content;
+                        showResult('inverseResult');
+                    } catch (error) {
+                        alert('错误: ' + error.message);
+                    } finally {
+                        hideLoading('inverseLoading');
+                    }
+                }, 50);
+            } catch (error) {
+                hideLoading('inverseLoading');
+                alert('错误: ' + error.message);
+            }
+        }
+
+        // 清空函数
+        function clearInverse() {
+            document.getElementById('lat1').value = '';
+            document.getElementById('lon1').value = '';
+            document.getElementById('lat2').value = '';
+            document.getElementById('lon2').value = '';
+            hideResult('inverseResult');
+        }
+
+        function clearDirect() {
+            document.getElementById('startLat').value = '';
+            document.getElementById('startLon').value = '';
+            document.getElementById('azimuth').value = '';
+            document.getElementById('distance').value = '';
+            hideResult('directResult');
+        }
+
+        function clearConvert() {
+            document.getElementById('convertInput').value = '';
+            hideResult('convertResult');
+        }
+
+        // 坐标转换
+        function convertCoordinate() {
+            try {
+                const inputStr = document.getElementById('convertInput').value;
+                if (!inputStr) {
+                    alert('请输入要转换的坐标');
+                    return;
+                }
+
+                showLoading('convertLoading');
+                hideResult('convertResult');
+
+                setTimeout(() => {
+                    try {
+                        const dd = CoordinateConverter.parseCoordinate(inputStr, 'auto');
+                        const coordType = Math.abs(dd) <= 90 ? '纬度' : '经度';
+                        const dms = CoordinateConverter.ddToDms(dd, Math.abs(dd) <= 90 ? 'lat' : 'lon');
+                        const now = new Date();
+                        
+                        const content = `
+                            <div class="result-item">
+                                <div>
+                                    <strong>输入坐标:</strong><br>
+                                    <span class="text-muted">${inputStr}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="result-item">
+                                <div>
+                                    <strong>十进制度:</strong><br>
+                                    <span class="result-value decimal-degrees">${dd.toFixed(8)}°</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyDecimalDegrees()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="result-item">
+                                <div>
+                                    <strong>度分秒:</strong><br>
+                                    <span class="result-value dms-format">${dms}</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyDmsFormat()">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="result-item">
+                                <div>
+                                    <strong>坐标类型:</strong><br>
+                                    <span class="result-value">${coordType}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-muted small mt-3">
+                                <i class="fas fa-clock me-1"></i>转换时间: ${now.toLocaleString('zh-CN')}
+                            </div>
+                        `;
+                        document.getElementById('convertResultContent').innerHTML = content;
+                        showResult('convertResult');
+                    } catch (error) {
+                        alert('错误: ' + error.message);
+                    } finally {
+                        hideLoading('convertLoading');
+                    }
+                }, 50);
+            } catch (error) {
+                hideLoading('convertLoading');
+                alert('错误: ' + error.message);
+            }
+        }
+
+        // 页面加载后填充示例数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 自动填充示例数据方便测试
+            document.getElementById('lat1').value = '39.9042';
+            document.getElementById('lon1').value = '116.4074';
+            document.getElementById('lat2').value = '31.2304';
+            document.getElementById('lon2').value = '121.4737';
+        });
+    </script>
+</body>
+</html>
