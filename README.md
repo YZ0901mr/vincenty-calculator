@@ -1,33 +1,162 @@
+🌟 功能特性
+🔄 坐标反算（坐标求距离）
+计算两点间的大地线距离
 
+计算正方位角和反方位角
 
-<!--
-  <<< Author notes: Step 2 >>>
-  Start this step by acknowledging the previous step.
-  Define terms and link to docs.github.com.
-  Historic note: previous version checked for empty pull request, changed to the correct theme `minima`.
--->
+支持十进制度和度分秒坐标格式输入
 
-## Step 2: Configure your site
+📍 坐标正算（距离求坐标）
+根据起点坐标、方位角和距离计算终点坐标
 
-_You turned on GitHub Pages! :tada:_
+提供十进制度和度分秒两种坐标格式输出
 
-We'll work in a branch, `my-pages`, that I created for you to get this site looking great. :sparkle:
+计算反向方位角
 
-Jekyll uses a file titled `_config.yml` to store settings for your site, your theme, and reusable content like your site title and GitHub handle. You can check out the `_config.yml` file on the **Code** tab of your repository.
+🔄 坐标格式转换
+十进制度 ↔ 度分秒格式相互转换
 
-We need to use a blog-ready theme. For this activity, we will use a theme named "minima".
+自动识别坐标类型（纬度/经度）
 
-### :keyboard: Activity: Configure your site
+智能解析多种输入格式
 
-1. Browse to the `_config.yml` file in the `my-pages` branch.
-1. In the upper right corner, open the file editor.
-1. Add a `theme:` set to **minima** so it shows in the `_config.yml` file as below:
-   ```yml
-   theme: minima
-   ```
-1. (optional) You can modify the other configuration variables such as `title:`, `author:`, and `description:` to further customize your site.
-1. Commit your changes.
-1. (optional) Create a pull request to view all the changes you'll make throughout this course. Click the **Pull Requests** tab, click **New pull request**, set `base: main` and `compare:my-pages`.
-1. Wait about 20 seconds then refresh this page (the one you're following instructions from). [GitHub Actions](https://docs.github.com/en/actions) will automatically update to the next step.
+🚀 快速开始
+在线使用
+直接访问GitHub Pages页面即可使用：
 
+text
+https://[你的用户名].github.io/[仓库名]/
+本地运行
+克隆仓库到本地
 
+bash
+git clone https://github.com/[你的用户名]/[仓库名].git
+打开 index.html 文件
+
+bash
+cd [仓库名]
+# 直接在浏览器中打开 index.html 文件
+📖 使用指南
+坐标反算
+在"坐标求距离"选项卡中输入两点坐标
+
+支持格式：
+
+十进制度：39.9042
+
+度分秒：39 54 15.12 或 39°54'15.12"N
+
+点击"计算距离和方位角"获取结果
+
+坐标正算
+在"距离求坐标"选项卡中输入起点坐标
+
+设置方位角（0-360度）和距离（米）
+
+点击"计算终点坐标"获取结果
+
+坐标转换
+在"坐标转换"选项卡中输入坐标
+
+支持十进制度或度分秒格式
+
+点击"转换格式"获取两种格式的结果
+
+🛠 技术特点
+算法精度
+基于Vincenty大地测量算法
+
+毫米级计算精度
+
+支持WGS-84椭球体参数
+
+用户体验
+✅ 响应式设计，支持移动设备
+
+✅ 实时计算结果
+
+✅ 单项结果复制功能
+
+✅ 输入验证和错误提示
+
+✅ 优雅的加载动画
+
+输入格式支持
+十进制度：39.9042, -118.4074
+
+度分秒：39 54 15.12, 39°54'15.12"N
+
+混合格式：自动识别和解析
+
+📁 项目结构
+text
+vincenty-calculator/
+├── index.html          # 主页面文件
+├── README.md           # 项目说明文档
+└── assets/             # 资源文件（可选）
+    ├── images/         # 图片资源
+    └── css/            # 样式文件
+🎯 使用示例
+示例1：计算北京到上海的距离
+起点：北京 (39.9042°N, 116.4074°E)
+
+终点：上海 (31.2304°N, 121.4737°E)
+
+结果：距离 ≈ 1068公里
+
+示例2：坐标格式转换
+输入：39 54 15.12
+
+输出：39.90420000° (十进制度)
+
+🔧 技术栈
+前端框架：纯HTML5 + CSS3 + JavaScript
+
+UI组件：Bootstrap 5.1.3
+
+图标库：Font Awesome 6.0.0
+
+核心算法：Vincenty算法JavaScript实现
+
+📊 算法参数
+椭球体：WGS-84
+
+长半轴(a)：6,378,137.0 米
+
+扁率(f)：1/298.257223563
+
+短半轴(b)：6,356,752.314245 米
+
+🤝 贡献指南
+欢迎提交Issue和Pull Request来改进这个项目！
+
+Fork 本仓库
+
+创建特性分支：git checkout -b feature/AmazingFeature
+
+提交更改：git commit -m 'Add some AmazingFeature'
+
+推送分支：git push origin feature/AmazingFeature
+
+提交Pull Request
+
+📄 许可证
+本项目采用 MIT 许可证 - 查看 LICENSE 文件了解详情
+
+🙏 致谢
+Vincenty算法由Thaddeus Vincenty提出
+
+Bootstrap和Font Awesome提供优秀的UI组件和图标
+
+所有为项目做出贡献的开发者
+
+📞 联系信息
+如有问题或建议，请通过以下方式联系：
+
+提交 Issue
+
+发送邮件至：[你的邮箱]
+
+注意：本工具适用于教育和专业测量用途，对于关键任务应用建议使用专业测量软件进行验证。
+
+⭐ 如果这个项目对你有帮助，请给个Star！
