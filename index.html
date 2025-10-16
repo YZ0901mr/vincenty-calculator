@@ -109,20 +109,17 @@
             margin-top: 25px;
             border-left: 5px solid var(--primary-color);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            position: relative;
         }
         
         .copy-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
             background: rgba(255, 255, 255, 0.8);
             border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-size: 0.8rem;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.7rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-left: 10px;
         }
         
         .copy-btn:hover {
@@ -214,11 +211,20 @@
         }
         
         .result-item {
-            margin-bottom: 10px;
-            padding: 10px;
+            margin-bottom: 15px;
+            padding: 12px;
             background: white;
             border-radius: 8px;
             border-left: 3px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            color: var(--primary-color);
+            flex-grow: 1;
         }
     </style>
 </head>
@@ -321,9 +327,6 @@
                                     <p class="mt-2 fw-bold">计算中，请稍候...</p>
                                 </div>
                                 <div class="result-box" id="inverseResult" style="display: none;">
-                                    <button class="copy-btn" onclick="copyResult('inverseResultContent')">
-                                        <i class="fas fa-copy me-1"></i>复制
-                                    </button>
                                     <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>计算结果</h5>
                                     <div id="inverseResultContent"></div>
                                 </div>
@@ -386,9 +389,6 @@
                                     <p class="mt-2 fw-bold">计算中，请稍候...</p>
                                 </div>
                                 <div class="result-box" id="directResult" style="display: none;">
-                                    <button class="copy-btn" onclick="copyResult('directResultContent')">
-                                        <i class="fas fa-copy me-1"></i>复制
-                                    </button>
                                     <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>计算结果</h5>
                                     <div id="directResultContent"></div>
                                 </div>
@@ -427,9 +427,6 @@
                                     <p class="mt-2 fw-bold">转换中，请稍候...</p>
                                 </div>
                                 <div class="result-box" id="convertResult" style="display: none;">
-                                    <button class="copy-btn" onclick="copyResult('convertResultContent')">
-                                        <i class="fas fa-copy me-1"></i>复制
-                                    </button>
                                     <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>转换结果</h5>
                                     <div id="convertResultContent"></div>
                                 </div>
@@ -783,21 +780,18 @@
             alert('错误: ' + message);
         }
 
-        // 复制结果函数
-        function copyResult(elementId) {
-            const resultElement = document.getElementById(elementId);
-            const textToCopy = resultElement.innerText || resultElement.textContent;
-            
-            navigator.clipboard.writeText(textToCopy).then(() => {
+        // 复制单个结果函数
+        function copySingleResult(text) {
+            navigator.clipboard.writeText(text).then(() => {
                 // 显示复制成功提示
-                const copyBtn = event.target.closest('.copy-btn');
+                const copyBtn = event.target;
                 const originalText = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
                 copyBtn.style.background = 'var(--success-color)';
                 copyBtn.style.color = 'white';
                 
                 setTimeout(() => {
-                    copyBtn.innerHTML = originalText;
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
                     copyBtn.style.background = 'rgba(255, 255, 255, 0.8)';
                     copyBtn.style.color = 'inherit';
                 }, 2000);
@@ -836,19 +830,31 @@
                         const resultContent = document.getElementById('inverseResultContent');
                         resultContent.innerHTML = `
                             <div class="result-item">
-                                <strong>距离:</strong> ${result.distance.toFixed(3)} 米 (${(result.distance/1000).toFixed(6)} 公里)
+                                <div>
+                                    <strong>距离:</strong>
+                                    <span class="result-value">${result.distance.toFixed(3)} 米 (${(result.distance/1000).toFixed(6)} 公里)</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${result.distance.toFixed(3)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>起始方位角:</strong> ${result.forwardAzimuth.toFixed(6)}°
+                                <div>
+                                    <strong>起始方位角:</strong>
+                                    <span class="result-value">${result.forwardAzimuth.toFixed(6)}°</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${result.forwardAzimuth.toFixed(6)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>反向方位角:</strong> ${result.reverseAzimuth.toFixed(6)}°
-                            </div>
-                            <div class="result-item">
-                                <strong>起点坐标:</strong> ${lat1dd.toFixed(8)}°, ${lon1dd.toFixed(8)}°
-                            </div>
-                            <div class="result-item">
-                                <strong>终点坐标:</strong> ${lat2dd.toFixed(8)}°, ${lon2dd.toFixed(8)}°
+                                <div>
+                                    <strong>反向方位角:</strong>
+                                    <span class="result-value">${result.reverseAzimuth.toFixed(6)}°</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${result.reverseAzimuth.toFixed(6)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                         `;
 
@@ -898,19 +904,49 @@
                         const resultContent = document.getElementById('directResultContent');
                         resultContent.innerHTML = `
                             <div class="result-item">
-                                <strong>终点纬度:</strong> ${result.endLat.toFixed(8)}°
+                                <div>
+                                    <strong>终点纬度:</strong>
+                                    <span class="result-value">${result.endLat.toFixed(8)}°</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${result.endLat.toFixed(8)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>终点经度:</strong> ${result.endLon.toFixed(8)}°
+                                <div>
+                                    <strong>终点经度:</strong>
+                                    <span class="result-value">${result.endLon.toFixed(8)}°</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${result.endLon.toFixed(8)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>终点纬度(度分秒):</strong> ${CoordinateConverter.ddToDms(result.endLat, 'lat')}
+                                <div>
+                                    <strong>终点纬度(度分秒):</strong>
+                                    <span class="result-value">${CoordinateConverter.ddToDms(result.endLat, 'lat')}</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${CoordinateConverter.ddToDms(result.endLat, 'lat')}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>终点经度(度分秒):</strong> ${CoordinateConverter.ddToDms(result.endLon, 'lon')}
+                                <div>
+                                    <strong>终点经度(度分秒):</strong>
+                                    <span class="result-value">${CoordinateConverter.ddToDms(result.endLon, 'lon')}</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${CoordinateConverter.ddToDms(result.endLon, 'lon')}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>反向方位角:</strong> ${result.reverseAzimuth.toFixed(6)}°
+                                <div>
+                                    <strong>反向方位角:</strong>
+                                    <span class="result-value">${result.reverseAzimuth.toFixed(6)}°</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${result.reverseAzimuth.toFixed(6)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                         `;
 
@@ -953,13 +989,22 @@
                         const resultContent = document.getElementById('convertResultContent');
                         resultContent.innerHTML = `
                             <div class="result-item">
-                                <strong>十进制度:</strong> ${dd.toFixed(8)}°
+                                <div>
+                                    <strong>十进制度:</strong>
+                                    <span class="result-value">${dd.toFixed(8)}°</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${dd.toFixed(8)}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                             <div class="result-item">
-                                <strong>度分秒:</strong> ${dms}
-                            </div>
-                            <div class="result-item">
-                                <strong>坐标类型:</strong> ${isLatitude ? '纬度' : '经度'}
+                                <div>
+                                    <strong>度分秒:</strong>
+                                    <span class="result-value">${dms}</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySingleResult('${dms}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                         `;
 
