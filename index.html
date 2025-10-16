@@ -109,6 +109,7 @@
             margin-top: 25px;
             border-left: 5px solid var(--primary-color);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
         }
         
         .copy-btn {
@@ -225,6 +226,27 @@
             font-weight: bold;
             color: var(--primary-color);
             flex-grow: 1;
+            cursor: pointer;
+            user-select: text;
+        }
+        
+        .result-value:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+        
+        .toast {
+            background: var(--success-color);
+            color: white;
+            border-radius: 8px;
+            padding: 12px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
     </style>
 </head>
@@ -474,6 +496,9 @@
             </div>
         </div>
     </div>
+
+    <!-- 复制成功提示 -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <footer class="bg-dark text-white text-center py-4 mt-5">
         <div class="container">
@@ -780,25 +805,76 @@
             alert('错误: ' + message);
         }
 
-        // 复制单个结果函数
+        // 显示复制成功提示
+        function showCopySuccess(message) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 2000);
+        }
+
+        // 改进的复制函数
         function copySingleResult(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                // 显示复制成功提示
-                const copyBtn = event.target;
-                const originalText = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                copyBtn.style.background = 'var(--success-color)';
-                copyBtn.style.color = 'white';
-                
-                setTimeout(() => {
-                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
-                    copyBtn.style.background = 'rgba(255, 255, 255, 0.8)';
-                    copyBtn.style.color = 'inherit';
-                }, 2000);
-            }).catch(err => {
-                console.error('复制失败: ', err);
-                alert('复制失败，请手动选择文本复制');
-            });
+            // 创建一个临时的textarea元素
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                // 尝试使用现代剪贴板API
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showCopySuccess('复制成功!');
+                        document.body.removeChild(textArea);
+                    }).catch(err => {
+                        // 如果现代API失败，回退到传统方法
+                        fallbackCopyText(text);
+                        document.body.removeChild(textArea);
+                    });
+                } else {
+                    // 使用传统方法
+                    fallbackCopyText(text);
+                    document.body.removeChild(textArea);
+                }
+            } catch (err) {
+                // 最终回退
+                fallbackCopyText(text);
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // 传统复制方法
+        function fallbackCopyText(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess('复制成功!');
+                } else {
+                    showCopySuccess('请手动选择文本复制');
+                }
+            } catch (err) {
+                showCopySuccess('请手动选择文本复制');
+            }
+            document.body.removeChild(textArea);
         }
 
         // 反算计算
@@ -832,7 +908,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>距离:</strong>
-                                    <span class="result-value">${result.distance.toFixed(3)} 米 (${(result.distance/1000).toFixed(6)} 公里)</span>
+                                    <span class="result-value" onclick="copySingleResult('${result.distance.toFixed(3)}')">
+                                        ${result.distance.toFixed(3)} 米 (${(result.distance/1000).toFixed(6)} 公里)
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${result.distance.toFixed(3)}')">
                                     <i class="fas fa-copy"></i>
@@ -841,7 +919,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>起始方位角:</strong>
-                                    <span class="result-value">${result.forwardAzimuth.toFixed(6)}°</span>
+                                    <span class="result-value" onclick="copySingleResult('${result.forwardAzimuth.toFixed(6)}')">
+                                        ${result.forwardAzimuth.toFixed(6)}°
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${result.forwardAzimuth.toFixed(6)}')">
                                     <i class="fas fa-copy"></i>
@@ -850,7 +930,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>反向方位角:</strong>
-                                    <span class="result-value">${result.reverseAzimuth.toFixed(6)}°</span>
+                                    <span class="result-value" onclick="copySingleResult('${result.reverseAzimuth.toFixed(6)}')">
+                                        ${result.reverseAzimuth.toFixed(6)}°
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${result.reverseAzimuth.toFixed(6)}')">
                                     <i class="fas fa-copy"></i>
@@ -906,7 +988,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>终点纬度:</strong>
-                                    <span class="result-value">${result.endLat.toFixed(8)}°</span>
+                                    <span class="result-value" onclick="copySingleResult('${result.endLat.toFixed(8)}')">
+                                        ${result.endLat.toFixed(8)}°
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${result.endLat.toFixed(8)}')">
                                     <i class="fas fa-copy"></i>
@@ -915,7 +999,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>终点经度:</strong>
-                                    <span class="result-value">${result.endLon.toFixed(8)}°</span>
+                                    <span class="result-value" onclick="copySingleResult('${result.endLon.toFixed(8)}')">
+                                        ${result.endLon.toFixed(8)}°
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${result.endLon.toFixed(8)}')">
                                     <i class="fas fa-copy"></i>
@@ -924,7 +1010,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>终点纬度(度分秒):</strong>
-                                    <span class="result-value">${CoordinateConverter.ddToDms(result.endLat, 'lat')}</span>
+                                    <span class="result-value" onclick="copySingleResult('${CoordinateConverter.ddToDms(result.endLat, 'lat')}')">
+                                        ${CoordinateConverter.ddToDms(result.endLat, 'lat')}
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${CoordinateConverter.ddToDms(result.endLat, 'lat')}')">
                                     <i class="fas fa-copy"></i>
@@ -933,7 +1021,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>终点经度(度分秒):</strong>
-                                    <span class="result-value">${CoordinateConverter.ddToDms(result.endLon, 'lon')}</span>
+                                    <span class="result-value" onclick="copySingleResult('${CoordinateConverter.ddToDms(result.endLon, 'lon')}')">
+                                        ${CoordinateConverter.ddToDms(result.endLon, 'lon')}
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${CoordinateConverter.ddToDms(result.endLon, 'lon')}')">
                                     <i class="fas fa-copy"></i>
@@ -942,7 +1032,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>反向方位角:</strong>
-                                    <span class="result-value">${result.reverseAzimuth.toFixed(6)}°</span>
+                                    <span class="result-value" onclick="copySingleResult('${result.reverseAzimuth.toFixed(6)}')">
+                                        ${result.reverseAzimuth.toFixed(6)}°
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${result.reverseAzimuth.toFixed(6)}')">
                                     <i class="fas fa-copy"></i>
@@ -991,7 +1083,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>十进制度:</strong>
-                                    <span class="result-value">${dd.toFixed(8)}°</span>
+                                    <span class="result-value" onclick="copySingleResult('${dd.toFixed(8)}')">
+                                        ${dd.toFixed(8)}°
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${dd.toFixed(8)}')">
                                     <i class="fas fa-copy"></i>
@@ -1000,7 +1094,9 @@
                             <div class="result-item">
                                 <div>
                                     <strong>度分秒:</strong>
-                                    <span class="result-value">${dms}</span>
+                                    <span class="result-value" onclick="copySingleResult('${dms}')">
+                                        ${dms}
+                                    </span>
                                 </div>
                                 <button class="copy-btn" onclick="copySingleResult('${dms}')">
                                     <i class="fas fa-copy"></i>
